@@ -6,6 +6,7 @@ use tui::{backend::CrosstermBackend,  Terminal, widgets::{Block, Borders}};
 use crate::input::{InputEvent, key::Key};
 use crate::input::events::Events;
 use crate::app::state::AppState;
+use crate::todo::Todo;
 
 pub mod actions;
 pub mod state;
@@ -21,6 +22,7 @@ pub struct App<'a> {
     pub should_quit: bool,
     pub events: Events,
     state: AppState,
+    todo: Todo,
 }
 
 
@@ -34,11 +36,13 @@ impl<'a> App<'a> {
         let tick_rate = Duration::from_millis(200);
         let events = Events::new(tick_rate);
         let state = AppState::initialize();
+        let todo = Todo::load("db.json".to_string());
         Ok((App {
             title,
             should_quit: false,
             events,
             state,
+            todo,
         }, terminal))
     }
     pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<(), io::Error> {
