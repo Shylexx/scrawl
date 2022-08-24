@@ -1,0 +1,32 @@
+use std::{time::Duration, sync::mpsc::{Sender, Receiver, channel, RecvError}, thread};
+use crossterm::event;
+
+use super::{InputEvent, key::Key};
+
+pub struct Events {
+    rx: Receiver<InputEvent>,
+    _tx: Sender<InputEvent>,
+}
+
+impl Events {
+    pub fn new(tick_rate: Duration) -> Events {
+        let (tx, rx) = channel();
+        let event_tx = tx.clone();
+        thread::spawn(move || {
+            loop {
+                // pool for tick rate duration, if no event, sent tick event
+                if crossterm::event::poll(tick_rate).unwrap() {
+                    if let event::Event::Key(key) = event::read().unwrap() {
+                        let key = Key::from(key);
+                        event_tx.send(InputEvent::Input(key)).unwrap();
+                    }
+                }
+                event_tx.send(InputEvent::Tick).unwrap();
+            }
+        });
+        Events { rx, _tx: tx }
+    }
+    pub fn next(&self) -> Result<InputEvent, RecvError> {
+        self.rx.recv()
+    }
+}
